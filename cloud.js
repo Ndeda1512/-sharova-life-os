@@ -1,0 +1,8 @@
+/* Sharova Life OS — authenticated + entitled workspace sync. */
+(function(){
+  const KEY='sharova-life-os-v1';let ready=false,timer=null;const originalSet=localStorage.setItem.bind(localStorage);
+  async function entitled(c,user){if(!c||!user?.id)return false;try{const {data,error}=await c.from('user_entitlements').select('status,expires_at').eq('user_id',user.id).maybeSingle();if(error||!data||data.status!=='active')return false;return !data.expires_at||new Date(data.expires_at).getTime()>Date.now()}catch{return false}}
+  async function sync(){if(!ready||!window.SHAROVA_SUPABASE_CLIENT||!window.SHAROVA_USER)return;const c=window.SHAROVA_SUPABASE_CLIENT,user=window.SHAROVA_USER;if(!await entitled(c,user))return;try{const raw=localStorage.getItem(KEY),data=raw?JSON.parse(raw):{};await c.from('user_workspaces').upsert({user_id:user.id,data,updated_at:new Date().toISOString()},{onConflict:'user_id'})}catch(e){console.warn('Sharova cloud sync failed',e)}}
+  localStorage.setItem=function(k,v){originalSet(k,v);if(k===KEY&&ready){clearTimeout(timer);timer=setTimeout(sync,250)}};
+  window.addEventListener('sharova-auth-ready',async()=>{ready=true;const c=window.SHAROVA_SUPABASE_CLIENT,user=window.SHAROVA_USER;if(!c||!user||!await entitled(c,user))return;try{const {data,error}=await c.from('user_workspaces').select('data').eq('user_id',user.id).maybeSingle();if(error)throw error;if(data&&data.data){originalSet(KEY,JSON.stringify(data.data));location.reload()}else await sync()}catch(e){console.warn('Sharova cloud load failed',e)}});
+})();
