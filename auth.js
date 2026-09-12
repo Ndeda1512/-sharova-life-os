@@ -1,7 +1,9 @@
 /* Sharova Life OS — customer authentication + paid-access gate via Supabase. */
 (function(){
   const SUPABASE_URL='https://ofodxwpukrgegtavahfm.supabase.co';
-  const SUPABASE_KEY='sb_publishable_RvJAQ8p31BacTxANX3gltw_KRxlpoxe';
+  // Use the active Supabase legacy anon key for broad client compatibility.
+  // This is a public client key; never put a service-role key in browser code.
+  const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mb2R4d3B1a3JnZWd0YXZhaGZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMDAwOTMsImV4cCI6MjEwNDY3NjA5M30.mziHndjCgOwE3oU_iQmceYehp5uWZdS1tQs-YSTuvhI';
   const PRODUCTION_URL='https://sharova-life-os.vercel.app';
   const OWNER_EMAIL='sharonvugutsa12@gmail.com';
   const TESTER_EMAIL='askahnyaboke1998@gmail.com';
