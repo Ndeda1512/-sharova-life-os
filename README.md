@@ -1,61 +1,71 @@
 # Sharova Life OS
 
-**Sharova Life OS** is a mobile-friendly personal command center for organizing the practical parts of everyday life in one place.
+**Sharova Life OS** is a mobile-friendly personal operating system for organizing the practical parts of everyday life in one calm workspace.
 
 ## What is included
 
 - **Dashboard** — quick view of tasks, deadlines, career items and documents.
 - **Documents** — track important documents, expiry dates, categories and notes.
 - **Money** — record income and expenses, set a current balance and savings goal.
-- **Career** — track opportunities through To apply, Applied, Interview, Offer and Closed stages.
+- **Career** — track jobs, internships and other opportunities through a clear pipeline.
+- **Student Life** — a dedicated workspace for school students, university students and parents managing a child's study routine.
+- **Classes & timetable** — units/subjects, lecturers or teachers, rooms, days and times.
+- **Assignments & coursework** — deadlines, priority and completion planning.
+- **Tests & exams** — exam dates and revision plans.
+- **Grades & GPA** — store results and calculate a simple percentage average.
+- **Academic calendar** — semester dates, registration, holidays and school events.
+- **Student money** — fees, allowances and education-related expenses.
+- **Scholarships & opportunities** — applications, internships and other student opportunities.
+- **Campus activities** — clubs, societies, events, leadership and volunteering.
+- **Group projects** — teammates, personal tasks and deadlines.
+- **Study planner** — focused study sessions and revision targets.
 - **Deadlines** — manage due dates, priorities and notes.
 - **Travel** — create trips with preparation checklists.
-- **Home & Tasks** — everyday tasks, priorities, due dates and repeating tasks.
+- **Home & Tasks** — everyday tasks, priorities, due dates and repeating routines.
 - **AI Assistant** — an in-app assistant area for priorities, summaries and planning.
-- **Settings** — personalize the display name/currency and export or import a JSON backup.
-- **PWA support** — includes a web app manifest and service worker for an app-like experience.
+- **Settings** — personalize the workspace and export/import backups.
+- **PWA support** — app-like web experience with manifest and service worker support.
+
+## Life-stage personalization
+
+Sharova Life OS is not a separate product for each audience. During first use, the workspace can be personalized around:
+
+- Student
+- University Student
+- Job Seeker
+- Working Professional
+- Entrepreneur
+- Parent / Family
+- Other
+
+A parent can select **Parent / Family** and optionally identify the student whose school or university routine they are managing. The rest of the Life OS remains available regardless of the selected stage.
 
 ## Data and privacy
 
-Core workspace data is stored locally in the browser using `localStorage`. Export a backup from **Settings → Backup & data** before clearing browser storage or moving to another device.
+Core workspace data is stored locally in the browser using `localStorage`. Export a backup before clearing browser storage or moving to another device. Account access is handled separately through the configured authentication service.
 
-The repository does not contain a user database or hard-coded personal records.
+The repository does not contain a hard-coded customer database or personal student records.
 
 ## Project structure
 
 ```text
 index.html      Main application UI
 styles.css      Responsive visual system
-app.js          Workspace state, forms, navigation and local data
+polish.css      UI polish layer
+student.css     Student + Family Study visual system
+app.js          Core workspace state, forms and navigation
+student.js      Student Life + Family Study state and forms
 ai.js           AI assistant client-side integration
+cloud.js        Account/cloud workspace integration
 api/            Server-side AI endpoint(s)
+auth.js         Customer authentication and access gate
 manifest.json   PWA metadata
 sw.js           Service worker/cache
 icon.svg        Application icon
 ```
 
-## AI setup
-
-The AI assistant is designed to work with the project's API endpoint. A deployed version should keep provider secrets on the server as environment variables rather than placing an API key in browser code.
-
-If the AI service is not configured, the rest of the Life OS remains usable as a local workspace.
-
-## Running locally
-
-Because this is a browser application, serve the repository with any simple static web server rather than opening `index.html` directly. For example:
-
-```bash
-python -m http.server 8000
-```
-
-Then open the local server in a browser.
-
-## Deployment
-
-The project can be deployed as a static/PWA-style web app on a host such as Vercel or GitHub Pages. If the AI endpoint is enabled, configure its required environment variables in the deployment platform and keep secrets server-side.
-
 ## Product direction
 
-Sharova is intended to feel like a calm, practical personal operating system rather than a collection of disconnected templates. The core experience is designed around quick capture, clear status, useful reminders, portable data and mobile-first navigation.
+Sharova Life OS is designed to feel like a calm, practical personal operating system rather than a collection of disconnected templates. The same product adapts to different life stages while keeping the core workspace consistent.
 
 **Created by Sharon Ndeda.**
