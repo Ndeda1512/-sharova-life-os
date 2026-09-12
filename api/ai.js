@@ -42,14 +42,46 @@ export default async function handler(req, res) {
       return;
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      res.status(503).json({ error: 'AI service is not configured yet.' });
-      return;
+    const safeContext = typeof context === 'string' ? context.slice(0, 12000) : '';
+    const system = `You are Sharova, a calm and practical personal operating system assistant. Help the user prioritize tasks, deadlines, documents, career, student life, money, travel and home life. Give concise, actionable answers. Never invent data. Use the supplied workspace context when relevant. Do not reveal secrets or API keys.\n\nWorkspace context:\n${safeContext}`;
+
+    // Prefer Google's Gemini free-tier API. The key stays server-side in Vercel.
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey) {
+      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(geminiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: system }] },
+            contents: [{ role: 'user', parts: [{ text: message }] }],
+            generationConfig: { maxOutputTokens: 500 }
+          })
+        }
+      );
+      const data = await response.json();
+      if (response.ok) {
+        const text = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').filter(Boolean).join('\n');
+        if (text) {
+          res.status(200).json({ text, provider: 'gemini' });
+          return;
+        }
+      }
+      // If Gemini is temporarily rate-limited, continue to the OpenAI fallback when configured.
+      if (!process.env.OPENAI_API_KEY) {
+        res.status(response.status || 503).json({ error: data?.error?.message || 'The free AI service is temporarily unavailable.' });
+        return;
+      }
     }
 
-    const safeContext = typeof context === 'string' ? context.slice(0, 12000) : '';
-    const system = `You are Sharova, a calm and practical personal operating system assistant. Help the user prioritize tasks, deadlines, documents, career, money, travel and home life. Give concise, actionable answers. Never invent data. Use the supplied workspace context when relevant. Do not reveal secrets or API keys.\n\nWorkspace context:\n${safeContext}`;
+    // Optional OpenAI fallback. Sharova does not depend on it when Gemini is configured.
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      res.status(503).json({ error: 'Free AI is not configured yet. Add GEMINI_API_KEY in the Sharova Life OS Vercel project.' });
+      return;
+    }
 
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
@@ -74,7 +106,7 @@ export default async function handler(req, res) {
       .filter(Boolean)
       .join('\n') || 'I could not generate a response.';
 
-    res.status(200).json({ text });
+    res.status(200).json({ text, provider: 'openai' });
   } catch (error) {
     console.error('AI handler error', error);
     res.status(500).json({ error: 'The AI service is temporarily unavailable.' });
