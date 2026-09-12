@@ -1,11 +1,13 @@
 {
-  "name":"Sharova Life OS",
-  "short_name":"Sharova",
-  "description":"A calm personal operating system for life, career, money, documents, deadlines, travel and everyday life.",
-  "start_url":"./",
-  "scope":"./",
-  "display":"standalone",
-  "background_color":"#fbf8f3",
-  "theme_color":"#29231f",
-  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+  "name": "Sharova Life OS",
+  "short_name": "Sharova",
+  "description": "A calm personal operating system for life, career, money, documents, deadlines, travel and everyday life.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fbf8f3",
+  "theme_color": "#29231f",
+  "icons": [
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
 }
