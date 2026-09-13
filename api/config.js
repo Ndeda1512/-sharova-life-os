@@ -1,1 +1,14 @@
-module.exports=(req,res)=>{res.setHeader('Cache-Control','no-store');res.status(200).json({supabaseUrl:process.env.SUPABASE_URL||'',supabaseAnonKey:process.env.SUPABASE_PUBLISHABLE_KEY||''})};
+export default function handler(req, res) {
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const mode = process.env.PAYMENT_MODE === 'direct' ? 'direct' : 'activation_code';
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(200).json({
+    paymentMode: mode,
+    price: 47,
+    currency: 'USD'
+  });
+}
