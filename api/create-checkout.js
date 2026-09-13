@@ -1,5 +1,6 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (process.env.PAYMENT_MODE !== 'direct') return res.status(404).json({ error: 'Direct checkout is not enabled for this edition.' });
 
   try {
     const auth = req.headers.authorization || '';
@@ -8,7 +9,9 @@ export default async function handler(req, res) {
     if (!process.env.STRIPE_SECRET_KEY) return res.status(503).json({ error: 'Checkout is not configured yet.' });
 
     const supabaseUrl = process.env.SUPABASE_URL || 'https://ofodxwpukrgegtavahfm.supabase.co';
-    const supabaseAnonKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_RvJAQ8p31BacTxANx3gltw_KRxlpoxe';
+    const supabaseAnonKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+    if (!supabaseAnonKey) return res.status(503).json({ error: 'Account service is not configured.' });
+
     const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
       headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${accessToken}` }
     });
