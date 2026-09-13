@@ -45,68 +45,44 @@ export default async function handler(req, res) {
     const safeContext = typeof context === 'string' ? context.slice(0, 12000) : '';
     const system = `You are Sharova, a calm and practical personal operating system assistant. Help the user prioritize tasks, deadlines, documents, career, student life, money, travel and home life. Give concise, actionable answers. Never invent data. Use the supplied workspace context when relevant. Do not reveal secrets or API keys.\n\nWorkspace context:\n${safeContext}`;
 
-    // Prefer Google's Gemini free-tier API. The key stays server-side in Vercel.
+    // Gemini is the only AI provider for Sharova Life OS.
+    // Keep the key server-side in Vercel. Do not fall back to OpenAI.
     const geminiKey = process.env.GEMINI_API_KEY;
-    if (geminiKey) {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(geminiKey)}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: system }] },
-            contents: [{ role: 'user', parts: [{ text: message }] }],
-            generationConfig: { maxOutputTokens: 500 }
-          })
-        }
-      );
-      const data = await response.json();
-      if (response.ok) {
-        const text = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').filter(Boolean).join('\n');
-        if (text) {
-          res.status(200).json({ text, provider: 'gemini' });
-          return;
-        }
-      }
-      // If Gemini is temporarily rate-limited, continue to the OpenAI fallback when configured.
-      if (!process.env.OPENAI_API_KEY) {
-        res.status(response.status || 503).json({ error: data?.error?.message || 'The free AI service is temporarily unavailable.' });
-        return;
-      }
-    }
-
-    // Optional OpenAI fallback. Sharova does not depend on it when Gemini is configured.
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      res.status(503).json({ error: 'Free AI is not configured yet. Add GEMINI_API_KEY in the Sharova Life OS Vercel project.' });
+    if (!geminiKey) {
+      res.status(503).json({ error: 'Sharova AI is temporarily unavailable. Gemini is not configured in the production environment.' });
       return;
     }
 
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
-        instructions: system,
-        input: message,
-        max_output_tokens: 500
-      })
-    });
+    const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(geminiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts: [{ text: message }] }],
+          generationConfig: { maxOutputTokens: 500 }
+        })
+      }
+    );
 
     const data = await response.json();
     if (!response.ok) {
-      res.status(response.status).json({ error: data?.error?.message || 'AI request failed.' });
+      console.error('Gemini request failed', { status: response.status, message: data?.error?.message });
+      res.status(response.status || 503).json({
+        error: data?.error?.message || 'Sharova AI is temporarily unavailable. Please try again shortly.'
+      });
       return;
     }
 
-    const text = data.output_text || (data.output || [])
-      .flatMap(item => item.content || [])
-      .map(part => part.text || '')
-      .filter(Boolean)
-      .join('\n') || 'I could not generate a response.';
+    const text = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').filter(Boolean).join('\n');
+    if (!text) {
+      res.status(503).json({ error: 'Sharova AI did not return a response. Please try again.' });
+      return;
+    }
 
-    res.status(200).json({ text, provider: 'openai' });
+    res.status(200).json({ text, provider: 'gemini' });
   } catch (error) {
     console.error('AI handler error', error);
     res.status(500).json({ error: 'The AI service is temporarily unavailable.' });
