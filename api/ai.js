@@ -66,7 +66,7 @@ export default async function handler(req, res) {
           model,
           system_instruction: system,
           input: message,
-          generation_config: { max_tokens: 500 }
+          generation_config: { max_output_tokens: 500 }
         })
       }
     );
