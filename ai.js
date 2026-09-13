@@ -42,9 +42,12 @@
     log.scrollTop = log.scrollHeight;
 
     try {
-      if (!window.SHAROVA_SUPABASE_CLIENT) throw new Error('Account service is not ready.');
-      const {data: sessionData, error: sessionError} = await window.SHAROVA_SUPABASE_CLIENT.auth.getSession();
-      if (sessionError || !sessionData.session) throw new Error('Please log in again.');
+      const client = window.SHAROVA_SUPABASE_CLIENT;
+      if (!client || !client.auth || typeof client.auth.getSession !== 'function') {
+        throw new Error('Account service is still loading. Please wait a moment and try again.');
+      }
+      const {data: sessionData, error: sessionError} = await client.auth.getSession();
+      if (sessionError || !sessionData?.session) throw new Error('Please log in again.');
       const response = await fetch('/api/ai', {
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${sessionData.session.access_token}`},
