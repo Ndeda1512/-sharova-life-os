@@ -46,23 +46,27 @@ export default async function handler(req, res) {
     const system = `You are Sharova, a calm and practical personal operating system assistant. Help the user prioritize tasks, deadlines, documents, career, student life, money, travel and home life. Give concise, actionable answers. Never invent data. Use the supplied workspace context when relevant. Do not reveal secrets or API keys.\n\nWorkspace context:\n${safeContext}`;
 
     // Gemini is the only AI provider for Sharova Life OS.
-    // Keep the key server-side in Vercel. Do not fall back to OpenAI.
+    // Use Gemini's current Interactions API and keep the key server-side in Vercel.
     const geminiKey = process.env.GEMINI_API_KEY;
     if (!geminiKey) {
       res.status(503).json({ error: 'Sharova AI is temporarily unavailable. Gemini is not configured in the production environment.' });
       return;
     }
 
-    const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(geminiKey)}`,
+      'https://generativelanguage.googleapis.com/v1beta/interactions',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': geminiKey
+        },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: system }] },
-          contents: [{ role: 'user', parts: [{ text: message }] }],
-          generationConfig: { maxOutputTokens: 500 }
+          model,
+          system_instruction: system,
+          input: message,
+          generation_config: { max_tokens: 500 }
         })
       }
     );
@@ -76,7 +80,15 @@ export default async function handler(req, res) {
       return;
     }
 
-    const text = data?.candidates?.[0]?.content?.parts?.map(part => part.text || '').filter(Boolean).join('\n');
+    const text = data?.steps
+      ?.filter(step => step?.type === 'model_output')
+      ?.flatMap(step => Array.isArray(step.content) ? step.content : [])
+      ?.filter(part => part?.type === 'text' && part.text)
+      ?.map(part => part.text)
+      ?.join('\n')
+      || data?.output_text
+      || '';
+
     if (!text) {
       res.status(503).json({ error: 'Sharova AI did not return a response. Please try again.' });
       return;
