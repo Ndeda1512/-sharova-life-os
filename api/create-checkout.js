@@ -1,8 +1,5 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  const referer=String(req.headers.referer||'');
-  const directEdition=process.env.PAYMENT_MODE==='direct'||/[?&]edition=direct(?:&|$)/i.test(referer);
-  if (!directEdition) return res.status(404).json({ error: 'Direct checkout is not enabled for this edition.' });
 
   try {
     const auth=req.headers.authorization||'';
@@ -15,10 +12,12 @@ export default async function handler(req, res) {
     const userResponse=await fetch(`${supabaseUrl}/auth/v1/user`,{headers:{apikey:supabaseAnonKey,Authorization:`Bearer ${accessToken}`}});
     const user=await userResponse.json();
     if(!userResponse.ok||!user?.id||!user?.email||!user.email_confirmed_at)return res.status(401).json({error:'A verified account is required.'});
+
     const configuredOrigin=process.env.APP_URL||(process.env.VERCEL_PROJECT_PRODUCTION_URL?`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`:'');
     const requestOrigin=req.headers.origin||'';
     const origin=configuredOrigin||requestOrigin;
     if(!origin||!/^https:\/\//i.test(origin))return res.status(500).json({error:'Application URL is not configured.'});
+
     const body=new URLSearchParams();
     body.set('mode','payment');
     body.set('success_url',`${origin}/payment-success.html?session_id={CHECKOUT_SESSION_ID}`);
@@ -32,6 +31,7 @@ export default async function handler(req, res) {
     body.set('line_items[0][quantity]','1');
     body.set('metadata[user_id]',user.id);
     body.set('metadata[product]','sharova_life_os');
+
     const stripeResponse=await fetch('https://api.stripe.com/v1/checkout/sessions',{method:'POST',headers:{Authorization:`Bearer ${process.env.STRIPE_SECRET_KEY}`,'Content-Type':'application/x-www-form-urlencoded'},body});
     const session=await stripeResponse.json();
     if(!stripeResponse.ok||!session?.url)return res.status(502).json({error:'Unable to start checkout.'});
