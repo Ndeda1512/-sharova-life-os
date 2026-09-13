@@ -68,4 +68,4 @@ icon.svg        Application icon
 
 Sharova Life OS is designed to feel like a calm, practical personal operating system rather than a collection of disconnected templates. The same product adapts to different life stages while keeping the core workspace consistent.
 
-**Created by Sharon Ndeda.**
+**Created by Sharon Ndeda.** 
