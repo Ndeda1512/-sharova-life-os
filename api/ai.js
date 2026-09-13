@@ -1,5 +1,6 @@
 const SUPABASE_URL = 'https://ofodxwpukrgegtavahfm.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_RvJAQ8p31BacTxANx3gltw_KRxlpoxe';
+const OWNER_EMAIL = 'sharonvugutsa12@gmail.com';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -23,17 +24,20 @@ export default async function handler(req, res) {
       return;
     }
 
-    const entitlementResponse = await fetch(
-      `${SUPABASE_URL}/rest/v1/user_entitlements?select=status,expires_at&user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
-      { headers: { apikey: SUPABASE_KEY, Authorization: authHeader } }
-    );
-    const entitlements = await entitlementResponse.json();
-    const entitlement = Array.isArray(entitlements) ? entitlements[0] : null;
-    const active = entitlement?.status === 'active' &&
-      (!entitlement.expires_at || new Date(entitlement.expires_at).getTime() > Date.now());
-    if (!entitlementResponse.ok || !active) {
-      res.status(403).json({ error: 'AI assistant is available with active Sharova Life OS access.' });
-      return;
+    const owner = String(user.email || '').toLowerCase() === OWNER_EMAIL.toLowerCase();
+    if (!owner) {
+      const entitlementResponse = await fetch(
+        `${SUPABASE_URL}/rest/v1/user_entitlements?select=status,expires_at&user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: authHeader } }
+      );
+      const entitlements = await entitlementResponse.json();
+      const entitlement = Array.isArray(entitlements) ? entitlements[0] : null;
+      const active = entitlement?.status === 'active' &&
+        (!entitlement.expires_at || new Date(entitlement.expires_at).getTime() > Date.now());
+      if (!entitlementResponse.ok || !active) {
+        res.status(403).json({ error: 'AI assistant is available with active Sharova Life OS access.' });
+        return;
+      }
     }
 
     const { message, context } = req.body || {};
@@ -45,8 +49,6 @@ export default async function handler(req, res) {
     const safeContext = typeof context === 'string' ? context.slice(0, 12000) : '';
     const system = `You are Sharova, a calm and practical personal operating system assistant. Help the user prioritize tasks, deadlines, documents, career, student life, money, travel and home life. Give concise, actionable answers. Never invent data. Use the supplied workspace context when relevant. Do not reveal secrets or API keys.\n\nWorkspace context:\n${safeContext}`;
 
-    // Gemini is the only AI provider for Sharova Life OS.
-    // Use Gemini's current Interactions API and keep the key server-side in Vercel.
     const geminiKey = process.env.GEMINI_API_KEY;
     if (!geminiKey) {
       res.status(503).json({ error: 'Sharova AI is temporarily unavailable. Gemini is not configured in the production environment.' });
