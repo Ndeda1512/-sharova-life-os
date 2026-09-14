@@ -1,4 +1,4 @@
-/* Sharova Life OS — friendly production error boundary + customer-flow guard. */
+/* Sharova Life OS — production safety guard. */
 (function(){
   let shown=false;
   function show(){
@@ -39,7 +39,8 @@
     const gate=document.getElementById('sharova-auth-gate');
     const card=gate?.querySelector('.sha-card');
     if(!card)return;
-    if(!/Creative Market activation|activation code included|Enter your activation code/i.test(card.textContent||''))return;
+    const text=card.textContent||'';
+    if(!/Creative Market|activation code|already paid for your access/i.test(text))return;
     card.innerHTML='<div class="sha-brand">SHAROVA LIFE OS</div><h1>Unlock your Life OS.</h1><p class="sha-sub">Your account is ready. Buy Sharova Life OS directly here for a one-time $47 payment. Creative Market is only one of our sales channels; direct buyers do not need an activation code.</p><div class="sha-price">$47 <span style="font-size:12px;font-weight:700">one time</span></div><div class="sha-note"><strong>Secure checkout:</strong> payment is handled by Stripe. Your card details are not stored by Sharova.</div><div class="sha-form"><div id="shaDirectMsg" class="sha-msg"></div><button id="shaDirectBuy" class="sha-primary" type="button">Buy &amp; unlock Sharova</button><button id="shaDirectLogout" class="sha-secondary" type="button">Log out</button></div>';
     directCheckout(card);
     const logout=card.querySelector('#shaDirectLogout');
@@ -49,14 +50,10 @@
     fixStalePaywall();
     const observer=new MutationObserver(fixStalePaywall);
     observer.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
+    setInterval(fixStalePaywall,500);
   }
-  window.addEventListener('DOMContentLoaded',watch,{once:true});
-  window.addEventListener('error',function(e){
-    console.error('Sharova runtime error',e.error||e.message);
-    show();
-  });
-  window.addEventListener('unhandledrejection',function(e){
-    console.error('Sharova unhandled promise rejection',e.reason);
-    show();
-  });
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watch,{once:true});
+  else watch();
+  window.addEventListener('error',function(e){console.error('Sharova runtime error',e.error||e.message);show()});
+  window.addEventListener('unhandledrejection',function(e){console.error('Sharova unhandled promise rejection',e.reason);show()});
 })();
