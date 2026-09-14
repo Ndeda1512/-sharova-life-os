@@ -14,7 +14,7 @@ export const config={api:{bodyParser:false}};
 async function grantEntitlement(session){
   const userId=session.metadata?.user_id||session.client_reference_id;
   if(!userId)throw new Error('Missing user id');
-  const supabaseUrl=process.env.SUPABASE_URL||'https://ofodxwpukrgegtavahfm.supabase.co';
+  const supabaseUrl='https://ofodxwpukrgegtavahfm.supabase.co';
   const serviceKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
   if(!serviceKey)throw new Error('Webhook service is not configured');
   const response=await fetch(`${supabaseUrl}/rest/v1/user_entitlements?on_conflict=user_id`,{method:'POST',headers:{apikey:serviceKey,Authorization:`Bearer ${serviceKey}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:userId,status:'active',plan:'lifetime',provider:'stripe',provider_customer_id:session.customer||null,expires_at:null,updated_at:new Date().toISOString()})});
