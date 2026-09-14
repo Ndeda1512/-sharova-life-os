@@ -6,9 +6,9 @@ export default async function handler(req, res) {
     const accessToken=auth.startsWith('Bearer ')?auth.slice(7):'';
     if(!accessToken)return res.status(401).json({error:'Authentication required'});
     if(!process.env.STRIPE_SECRET_KEY)return res.status(503).json({error:'Checkout is not configured yet.'});
-    const supabaseUrl=process.env.SUPABASE_URL||'https://ofodxwpukrgegtavahfm.supabase.co';
-    const supabaseAnonKey=process.env.SUPABASE_PUBLISHABLE_KEY||process.env.SUPABASE_ANON_KEY;
-    if(!supabaseAnonKey)return res.status(503).json({error:'Account service is not configured.'});
+
+    const supabaseUrl='https://ofodxwpukrgegtavahfm.supabase.co';
+    const supabaseAnonKey='sb_publishable_RvJAQ8p31BacTxANx3gltw_KRxlpoxe';
     const userResponse=await fetch(`${supabaseUrl}/auth/v1/user`,{headers:{apikey:supabaseAnonKey,Authorization:`Bearer ${accessToken}`}});
     const user=await userResponse.json();
     if(!userResponse.ok||!user?.id||!user?.email||!user.email_confirmed_at)return res.status(401).json({error:'A verified account is required.'});
