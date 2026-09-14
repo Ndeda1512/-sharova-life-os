@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'https://ofodxwpukrgegtavahfm.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_RvJAQ8p31BacTxANx3gltw_KRxlpoxe';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ofodxwpukrgegtavahfm.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 const OWNER_EMAIL = 'sharonvugutsa12@gmail.com';
 
 export default async function handler(req, res) {
@@ -12,6 +12,11 @@ export default async function handler(req, res) {
     const authHeader = req.headers.authorization || '';
     if (!authHeader.startsWith('Bearer ')) {
       res.status(401).json({ error: 'Please log in to use the AI assistant.' });
+      return;
+    }
+
+    if (!SUPABASE_KEY) {
+      res.status(503).json({ error: 'Account service is not configured in the production environment.' });
       return;
     }
 
