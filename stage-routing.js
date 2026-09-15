@@ -1,4 +1,5 @@
-/* Sharova Life OS — life-stage selection routing fix v3. */
+/* Sharova Life OS — life-stage navigation fix v4.
+   Every stage button must immediately open its destination. */
 (function(){
   const PROFILE_KEY='sharova-life-profile-v1';
   const routes={
@@ -11,56 +12,69 @@
     'Other':'home'
   };
 
-  const profileFromStorage=()=>{
-    try{return JSON.parse(localStorage.getItem(PROFILE_KEY)||'{}')||{}}
-    catch{return {}}
-  };
+  function readProfile(){
+    try{return JSON.parse(localStorage.getItem(PROFILE_KEY)||'{}')||{}}catch{return {}}
+  }
 
   function saveStage(stage,wrap){
-    const current=profileFromStorage();
-    const student=wrap?.querySelector('#profileStudent')?.value?.trim()||current.managedStudent||'';
-    const school=wrap?.querySelector('#profileSchool')?.value?.trim()||current.school||'';
-    const term=wrap?.querySelector('#profileTerm')?.value?.trim()||current.term||'';
-    const profile={stage,managedStudent:student,school,term};
-    localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));
+    const old=readProfile();
+    const profile={
+      ...old,
+      stage,
+      managedStudent:wrap?.querySelector('#profileStudent')?.value?.trim()||old.managedStudent||'',
+      school:wrap?.querySelector('#profileSchool')?.value?.trim()||old.school||'',
+      term:wrap?.querySelector('#profileTerm')?.value?.trim()||old.term||''
+    };
+    try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile))}catch{}
     try{
-      const studentRaw=JSON.parse(localStorage.getItem('sharova-student-v1')||'null');
-      if(studentRaw){
-        studentRaw.profile={...(studentRaw.profile||{}),...profile};
-        localStorage.setItem('sharova-student-v1',JSON.stringify(studentRaw));
-      }
+      const raw=JSON.parse(localStorage.getItem('sharova-student-v1')||'null');
+      if(raw){raw.profile={...(raw.profile||{}),...profile};localStorage.setItem('sharova-student-v1',JSON.stringify(raw))}
     }catch{}
   }
 
-  function navigate(id){
-    const target=document.getElementById(id);
-    if(!target){
-      location.hash=id;
-      return;
-    }
-    location.hash=id;
-    target.scrollIntoView({behavior:'smooth',block:'start'});
-    setTimeout(()=>window.scrollBy(0,-16),60);
-    window.dispatchEvent(new CustomEvent('sharova-life-stage-navigated',{detail:{target:id}}));
+  function openDestination(id){
+    const go=()=>{
+      const target=document.getElementById(id);
+      if(!target){
+        location.hash='#'+id;
+        return;
+      }
+      history.replaceState(null,'','#'+id);
+      target.scrollIntoView({behavior:'smooth',block:'start'});
+      setTimeout(()=>window.scrollBy(0,-20),80);
+      window.dispatchEvent(new CustomEvent('sharova-life-stage-navigated',{detail:{target:id}}));
+    };
+    requestAnimationFrame(go);
+    setTimeout(go,150);
   }
 
-  function go(stage){
+  function choose(stage,button){
     const target=routes[stage]||'home';
     const wrap=document.getElementById('studentOnboarding');
     saveStage(stage,wrap);
+    if(button){
+      document.querySelectorAll('.stage-option').forEach(b=>b.classList.remove('active'));
+      button.classList.add('active');
+    }
     if(wrap)wrap.remove();
-    requestAnimationFrame(()=>navigate(target));
+    openDestination(target);
     window.dispatchEvent(new CustomEvent('sharova-life-stage-selected',{detail:{stage,target}}));
   }
 
-  // Event delegation makes every current and dynamically-created stage button work.
-  document.addEventListener('click',event=>{
-    const button=event.target.closest?.('.stage-option');
-    if(!button)return;
-    const stage=button.dataset.stage;
-    if(!stage)return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    go(stage);
-  },true);
+  function bind(){
+    document.querySelectorAll('.stage-option').forEach(button=>{
+      if(button.dataset.stageBound==='1')return;
+      button.dataset.stageBound='1';
+      button.type='button';
+      button.addEventListener('click',function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        choose(this.dataset.stage,this);
+      },true);
+    });
+  }
+
+  const observer=new MutationObserver(bind);
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
