@@ -11,7 +11,8 @@ export default async function handler(req, res) {
     const supabaseAnonKey='sb_publishable_RvJAQ8p31BacTxANx3gltw_KRxlpoxe';
     const userResponse=await fetch(`${supabaseUrl}/auth/v1/user`,{headers:{apikey:supabaseAnonKey,Authorization:`Bearer ${accessToken}`}});
     const user=await userResponse.json();
-    if(!userResponse.ok||!user?.id||!user?.email||!user.email_confirmed_at)return res.status(401).json({error:'A verified account is required.'});
+    const confirmed=user?.email_confirmed_at||user?.confirmed_at;
+    if(!userResponse.ok||!user?.id||!user?.email||!confirmed)return res.status(401).json({error:'A verified account is required. Please confirm your email, then log in again.'});
 
     const configuredOrigin=process.env.APP_URL||(process.env.VERCEL_PROJECT_PRODUCTION_URL?`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`:'');
     const requestOrigin=req.headers.origin||'';
