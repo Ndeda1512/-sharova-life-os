@@ -1,4 +1,4 @@
-/* Sharova Life OS — life-stage selection routing fix. */
+/* Sharova Life OS — life-stage selection routing fix v2. */
 (function(){
   const PROFILE_KEY='sharova-life-profile-v1';
   const routes={
@@ -18,25 +18,32 @@
     const term=wrap?.querySelector('#profileTerm')?.value?.trim()||current.term||'';
     localStorage.setItem(PROFILE_KEY,JSON.stringify({stage,managedStudent:student,school,term}));
   }
-  function go(stage,button){
+  function navigate(id){
+    const target=document.getElementById(id);
+    if(!target){
+      location.hash=id;
+      setTimeout(()=>navigate(id),120);
+      return;
+    }
+    location.hash=id;
+    requestAnimationFrame(()=>{
+      target.scrollIntoView({behavior:'smooth',block:'start'});
+      window.scrollBy(0,-12);
+    });
+    window.dispatchEvent(new CustomEvent('sharova-life-stage-navigated',{detail:{target:id}}));
+  }
+  function go(stage){
     const wrap=document.getElementById('studentOnboarding');
     saveStage(stage,wrap);
     if(wrap)wrap.remove();
-    const id=routes[stage]||'home';
-    const target=document.getElementById(id);
-    if(target){
-      history.replaceState(null,'','#'+id);
-      requestAnimationFrame(()=>target.scrollIntoView({behavior:'smooth',block:'start'}));
-    }else{
-      location.hash=id;
-    }
-    window.dispatchEvent(new CustomEvent('sharova-life-stage-selected',{detail:{stage,target:id}}));
+    navigate(routes[stage]||'home');
+    window.dispatchEvent(new CustomEvent('sharova-life-stage-selected',{detail:{stage,target:routes[stage]||'home'}}));
   }
   function bind(root){
     root.querySelectorAll?.('.stage-option').forEach(button=>{
       if(button.dataset.stageRoutingBound==='1')return;
       button.dataset.stageRoutingBound='1';
-      button.addEventListener('click',()=>go(button.dataset.stage,button));
+      button.addEventListener('click',()=>go(button.dataset.stage));
     });
   }
   const observer=new MutationObserver(()=>bind(document));
