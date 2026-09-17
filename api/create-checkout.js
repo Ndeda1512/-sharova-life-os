@@ -39,7 +39,8 @@ export default async function handler(req, res) {
           product: 'sharova_life_os',
           plan: 'lifetime'
         },
-        channels: ['card', 'bank', 'mobile_money']
+        // USD checkout is card-based for Kenya.
+        channels: ['card']
       })
     });
 
