@@ -49,9 +49,9 @@ export default async function handler(req, res) {
     const safeContext = typeof context === 'string' ? context.slice(0, 12000) : '';
     const system = `You are Sharova, a calm and practical personal operating system assistant. Help the user prioritize tasks, deadlines, documents, career, student life, money, travel and home life. Give concise, actionable answers. Never invent data. Use the supplied workspace context when relevant. Do not reveal secrets or API keys.\n\nWorkspace context:\n${safeContext}`;
 
-    const geminiKey = process.env.GEMINI_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GEMINI_API_KEY;
     if (!geminiKey) {
-      res.status(503).json({ error: 'Sharova AI is temporarily unavailable. Gemini is not configured in the production environment.' });
+      res.status(503).json({ error: 'Sharova AI is not configured yet. Add the production Gemini API key in Vercel, then redeploy.' });
       return;
     }
 
@@ -68,6 +68,7 @@ export default async function handler(req, res) {
           model,
           system_instruction: system,
           input: message,
+          store: false,
           generation_config: { max_output_tokens: 500 }
         })
       }
