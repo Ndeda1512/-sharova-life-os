@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   try {
     const auth = req.headers.authorization || '';
     const accessToken = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-    if (!accessToken) return res.status(401).json({ error: 'Authentication required' });
+    if (!accessToken) return res.status(401).json({ error: 'Authentication required.' });
     if (!process.env.PAYSTACK_SECRET_KEY) return res.status(503).json({ error: 'Payment is not configured yet.' });
 
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
@@ -24,8 +24,19 @@ export default async function handler(req, res) {
     });
     const result = await verifyResponse.json().catch(() => ({}));
     const transaction = result?.data;
-    const expectedAmount = 4700;
-    const valid = verifyResponse.ok && result?.status && transaction?.status === 'success' && transaction?.currency === 'USD' && Number(transaction?.amount) === expectedAmount && transaction?.metadata?.product === 'sharova_life_os' && transaction?.metadata?.user_id === user.id;
+
+    const usdDirectPurchase =
+      transaction?.currency === 'USD' &&
+      Number(transaction?.amount) === 4700 &&
+      transaction?.metadata?.product === 'sharova_life_os' &&
+      transaction?.metadata?.user_id === user.id;
+
+    const kesPaystackProduct =
+      transaction?.currency === 'KES' &&
+      Number(transaction?.amount) === 650000 &&
+      String(transaction?.customer?.email || '').toLowerCase() === String(user.email).toLowerCase();
+
+    const valid = verifyResponse.ok && result?.status && transaction?.status === 'success' && (usdDirectPurchase || kesPaystackProduct);
 
     if (!valid) return res.status(400).json({ error: 'Payment could not be verified.' });
 
