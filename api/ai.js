@@ -58,8 +58,8 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Stable production model chosen for reliable availability.
-    const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    // Stable Gemini Flash model for production: fast, capable, and suited to everyday assistant tasks.
+    const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
     const response = await fetch(
       'https://generativelanguage.googleapis.com/v1beta/interactions',
       {
