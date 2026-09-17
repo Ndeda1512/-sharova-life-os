@@ -49,7 +49,6 @@ export default async function handler(req, res) {
     const safeContext = typeof context === 'string' ? context.slice(0, 12000) : '';
     const system = `You are Sharova, a calm and practical personal operating system assistant. Help the user prioritize tasks, deadlines, documents, career, student life, money, travel and home life. Give concise, actionable answers. Never invent data. Use the supplied workspace context when relevant. Do not reveal secrets or API keys.\n\nWorkspace context:\n${safeContext}`;
 
-    // Support the standard Gemini key names plus the custom name sometimes used in Vercel projects.
     const geminiKey = process.env.GEMINI_API_KEY ||
       process.env.GOOGLE_API_KEY ||
       process.env.GOOGLE_GEMINI_API_KEY ||
@@ -59,7 +58,8 @@ export default async function handler(req, res) {
       return;
     }
 
-    const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    // Stable production model chosen for reliable availability.
+    const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     const response = await fetch(
       'https://generativelanguage.googleapis.com/v1beta/interactions',
       {
