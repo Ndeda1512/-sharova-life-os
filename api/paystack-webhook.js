@@ -14,8 +14,15 @@ function verifySignature(payload, signature, secret) {
   }
 }
 
+function readMetadata(metadata) {
+  if (!metadata) return {};
+  if (typeof metadata === 'object') return metadata;
+  try { return JSON.parse(metadata); } catch { return {}; }
+}
+
 async function grantEntitlement(transaction) {
-  const userId = transaction?.metadata?.user_id;
+  const metadata = readMetadata(transaction?.metadata);
+  const userId = metadata.user_id;
   if (!userId) throw new Error('Missing user id');
 
   const supabaseUrl = 'https://ofodxwpukrgegtavahfm.supabase.co';
@@ -62,7 +69,12 @@ export default async function handler(req, res) {
 
     const event = JSON.parse(rawBody);
     const transaction = event?.data;
-    if (event?.event === 'charge.success' && transaction?.status === 'success' && transaction?.metadata?.product === 'sharova_life_os') {
+    const metadata = readMetadata(transaction?.metadata);
+    const validProduct = metadata.product === 'sharova_life_os';
+    const validCurrency = transaction?.currency === 'USD';
+    const validAmount = Number(transaction?.amount) === 4700;
+
+    if (event?.event === 'charge.success' && transaction?.status === 'success' && validProduct && validCurrency && validAmount) {
       await grantEntitlement(transaction);
     }
 
