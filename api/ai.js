@@ -52,14 +52,16 @@ export default async function handler(req, res) {
     const geminiKey = process.env.GEMINI_API_KEY ||
       process.env.GOOGLE_API_KEY ||
       process.env.GOOGLE_GEMINI_API_KEY ||
-      process.env.GOOGLE_GENAI_API_KEY;
+      process.env.GOOGLE_GENAI_API_KEY ||
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+      process.env.GOOGLE_AI_API_KEY;
     if (!geminiKey) {
       res.status(503).json({ error: 'Sharova AI is temporarily unavailable. Please try again shortly.' });
       return;
     }
 
     // Stable Gemini Flash model for production: fast, capable, and suited to everyday assistant tasks.
-    const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+    const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     const response = await fetch(
       'https://generativelanguage.googleapis.com/v1beta/interactions',
       {
