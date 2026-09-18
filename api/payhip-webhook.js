@@ -9,17 +9,17 @@ export default async function handler(req, res) {
     if (!webhookKey || !serviceKey) return res.status(503).json({ error: 'Webhook is not configured.' });
 
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
-    const signature = String(body.signature || '');
+    const signature = String(body.signature || '').trim().toLowerCase();
     const expected = crypto.createHash('sha256').update(webhookKey).digest('hex');
-    if (!signature || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
-      return res.status(401).json({ error: 'Invalid signature.' });
-    }
+    const validSignature = signature.length === expected.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    if (!validSignature) return res.status(401).json({ error: 'Invalid signature.' });
 
     const type = String(body.type || '');
     const items = Array.isArray(body.items) ? body.items : [];
     const isSharova = items.some((item) =>
-      /sharova life os/i.test(String(item.product_name || '')) ||
-      String(item.product_permalink || '').includes('sharova-life-os')
+      String(item.product_permalink || '').endsWith('/b/PjDWH') ||
+      String(item.product_name || '').trim().toLowerCase() === 'sharova life os — your personal digital life system' ||
+      /sharova life os/i.test(String(item.product_name || ''))
     );
     if (!isSharova) return res.status(200).json({ ignored: true });
 
@@ -29,8 +29,9 @@ export default async function handler(req, res) {
     if (!transactionId || !email) return res.status(400).json({ error: 'Missing transaction details.' });
 
     const product = items.find((item) =>
-      /sharova life os/i.test(String(item.product_name || '')) ||
-      String(item.product_permalink || '').includes('sharova-life-os')
+      String(item.product_permalink || '').endsWith('/b/PjDWH') ||
+      String(item.product_name || '').trim().toLowerCase() === 'sharova life os — your personal digital life system' ||
+      /sharova life os/i.test(String(item.product_name || ''))
     ) || items[0];
 
     const isPaid = type === 'paid';
