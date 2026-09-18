@@ -19,13 +19,13 @@ export default async function handler(req, res) {
 
     const email = String(user.email).trim().toLowerCase();
     const purchaseResponse = await fetch(
-      `${supabaseUrl}/rest/v1/payhip_purchases?select=transaction_id,status,product_name,paid_at,refunded_at&email=ilike.${encodeURIComponent(email)}&order=updated_at.desc&limit=1`,
+      `${supabaseUrl}/rest/v1/payhip_purchases?select=transaction_id,status,product_name,paid_at,refunded_at&email=eq.${encodeURIComponent(email)}&order=updated_at.desc&limit=1`,
       { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
     );
     const purchases = await purchaseResponse.json().catch(() => []);
     if (!purchaseResponse.ok) return res.status(502).json({ error: 'Could not check purchase access.' });
 
-    const purchase = purchases?.[0];
+    const purchase = (purchases || []).find(p => { const n = String(p.product_name || '').toLowerCase(); const id = String(p.product_id || '').toLowerCase(); return id === 'pjdwh' || n.includes('sharova'); });
     if (!purchase) return res.status(200).json({ entitled: false });
 
     const active = purchase.status === 'paid' && !purchase.refunded_at;
